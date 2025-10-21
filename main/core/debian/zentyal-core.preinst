@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+#DEBHELPER#
+
+SUDOERS=/etc/sudoers
+INCLUDE="
+# sudoers.d included by Zentyal Server, read /etc/sudoers.d/README
+#
+#includedir /etc/sudoers.d"
+if ! grep -q "^#includedir /etc/sudoers.d" "$SUDOERS"; then
+    echo "$INCLUDE" >> "$SUDOERS"
+fi
+
+sed -i 's/^bind.*/bind 127.0.0.1/' /etc/redis/redis.conf
+
+exit 0

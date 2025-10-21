@@ -1,0 +1,51 @@
+class: 'EBox::Samba'
+
+enabledepends:
+    - network
+    - dns
+    - ntp
+
+bootdepends:
+    - network
+    - ntp
+    - dns
+
+depends:
+    - network
+    - ntp
+    - dns
+
+models:
+    - DomainSettings
+    - Manage
+    - LdapInfo
+    - PAM
+    - AccountSettings
+    - SambaShares
+    - SambaSharePermissions
+    - SambaDeletedShares
+    - RecycleDefault
+    - RecycleExceptions
+    - ExportUsers
+    - ExportGroups
+    - ImportUsers
+    - ImportGroups
+    - SambaSettings
+
+composites:
+    Domain: [DomainSettings, GPOs]
+    Settings: [LdapInfo, PAM]
+    UserTemplate: []
+    RecycleBin: [RecycleDefault, RecycleExceptions]
+    FileSharing: [SambaShares, RecycleBin, SambaSettings]
+    GPOs: []
+    ImportExport: [ExportUsers, ImportUsers, ExportGroups, ImportGroups]
+
+modeldepends:
+    RecycleExceptions:
+        samba/SambaShares: [share]
+
+foreign:
+    SambaShares: [SambaSharePermissions]
+
+# NOTE: UserTemplate composite components are dynamic in componentNames()

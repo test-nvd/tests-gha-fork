@@ -1,0 +1,20 @@
+class: 'EBox::SysInfo'
+models:
+    - Halt
+    - TimeZone
+    - DateTime
+    - HostName
+    - ManageAdmins
+    - Debug
+    - Edition
+    - SmartAdminReport
+    - SmartAdminReportSettings
+    - KernelManagement
+    - SmartAlerts
+
+composites:
+    General: ['sysinfo/ManageAdmins', 'webadmin/Language','webadmin/AdminPort', 'sysinfo/HostName']
+    SmartAdmin: ['sysinfo/SmartAlerts','sysinfo/KernelManagement', 'sysinfo/SmartAdminReportSettings','sysinfo/SmartAdminReport']
+    DateAndTime: []
+
+# NOTE: DateAnDtime composite components are dynamic in componentNames()

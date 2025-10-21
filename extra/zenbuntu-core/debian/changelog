@@ -1,0 +1,162 @@
+zenbuntu-core (8.0.1) jammy; urgency=low
+
+  * New upstream release
+
+ -- Daniel Joven <djoven@novadevs.com>  Wed, 01 Oct 2025 12:46:34 +0100
+
+zenbuntu-core (8.0.0) jammy; urgency=medium
+
+  * New upstream release
+
+ -- Bruno Lorente <blorente@novadevs.com>  Thu, 08 Feb 2024 12:54:03 +0100
+
+zenbuntu-core (7.1.1) focal; urgency=low
+
+  * New upstream release
+
+ -- Daniel Joven <djoven@zentyal.com>  Thu, 17 Aug 2023 12:51:06 +0200
+
+zenbuntu-core (7.1.0) focal; urgency=low
+
+  * New upstream release
+
+ -- Bruno Lorente <blorente@novadevs.com>  Fri, 07 Jul 2023 20:53:12 +0200
+
+zenbuntu-core (7.0.1) focal; urgency=low
+
+  * New upstream release
+
+ -- Bruno Lorente <blorente@zentyal.com>  Mon, 22 Mar 2021 18:27:51 +0200
+
+zenbuntu-core (7.0.0) focal; urgency=low
+
+  * New upstream release
+
+ -- Bruno Lorente <blorente@zentyal.com>  Tue, 06 Oct 2020 10:32:34 +0200
+
+zenbuntu-core (6.2.0) bionic; urgency=medium
+
+  * New upstream release
+
+ -- Bruno Lorente <blorente@zentyal.com>  Fri, 08 May 2020 08:26:14 +0200
+
+zenbuntu-core (6.1) bionic; urgency=medium
+
+  * New upstream release
+
+ -- Bruno Lorente <blorente@zentyal.com>  Thu, 10 Oct 2019 05:36:45 +0000
+
+zenbuntu-core (6.0) bionic; urgency=medium
+
+  * Fix plymouth theme path
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sun, 02 Sep 2018 11:41:29 +0200
+
+zenbuntu-core (5.1) xenial; urgency=medium
+
+  * Bring dhcp interfaces up in /etc/rc.local
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sat, 03 Mar 2018 19:58:32 +0100
+
+zenbuntu-core (5.0.4) xenial; urgency=medium
+
+  * Fix update of grub conf on first install
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sun, 26 Feb 2017 18:27:20 +0100
+
+zenbuntu-core (5.0.3) xenial; urgency=medium
+
+  * Fix postinst to not replace rc.local in upgrades
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sun, 05 Feb 2017 00:16:10 +0100
+
+zenbuntu-core (5.0.2) xenial; urgency=medium
+
+  * Fix for LXDM starting after webadmin and rest of services
+  * Definitive fix for plymouth problems in expert mode
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sun, 11 Dec 2016 12:32:58 +0100
+
+zenbuntu-core (5.0.1) xenial; urgency=medium
+
+  * Quit plymouth 1 minute after finish to allow local login in expert mode 
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Thu, 01 Dec 2016 12:39:20 +0100
+
+zenbuntu-core (5.0) xenial; urgency=medium
+
+  * Package for 16.04
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Mon, 17 Oct 2016 12:53:24 +0200
+
+zenbuntu-core (4.2) trusty; urgency=medium
+
+  * Bump version to 4.2
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Tue, 20 Oct 2015 22:55:36 +0200
+
+zenbuntu-core (4.1) trusty; urgency=medium
+
+  * Bump version to 4.1
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Wed, 18 Mar 2015 15:37:07 +0100
+
+zenbuntu-core (4.0) trusty; urgency=medium
+
+  * Bump version to 4.0
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Tue, 28 Oct 2014 23:37:21 +0100
+
+zenbuntu-core (3.5.1) trusty; urgency=medium
+
+  * Fix version in plymouth text theme
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Wed, 02 Jul 2014 09:24:37 +0200
+
+zenbuntu-core (3.5) trusty; urgency=low
+
+  * Bump version to 3.5
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sun, 30 Mar 2014 04:53:45 +0200
+
+zenbuntu-core (3.4) saucy; urgency=low
+
+  * Bump version to 3.4
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Mon, 23 Dec 2013 16:02:43 +0100
+
+zenbuntu-core (3.3) precise; urgency=low
+
+  * Added man-db as dependency
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sun, 20 Oct 2013 20:46:04 +0200
+
+zenbuntu-core (3.2.1) precise; urgency=low
+
+  * Do initial actions only in fresh install
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Tue, 15 Oct 2013 08:08:13 +0200
+
+zenbuntu-core (3.2-1) precise; urgency=low
+
+  * Fixed remote-register
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Thu, 19 Sep 2013 03:54:21 +0200
+
+zenbuntu-core (3.2) precise; urgency=low
+
+  * New upstream release
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Tue, 17 Sep 2013 14:10:24 +0200
+
+zenbuntu-core (3.1.1) precise; urgency=low
+
+  * New upstream release
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Tue, 30 Jul 2013 09:54:02 +0200
+
+zenbuntu-core (3.1) precise; urgency=low
+
+  * Initial release
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sun, 05 May 2013 00:03:13 +0200

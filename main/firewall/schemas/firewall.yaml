@@ -1,0 +1,40 @@
+class: 'EBox::Firewall'
+
+depends:
+    - network
+
+enabledepends:
+    - network
+
+models:
+    - ToInternetRuleTable
+    - InternalToEBoxRuleTable
+    - ExternalToEBoxRuleTable
+    - EBoxOutputRuleTable
+    - ExternalToInternalRuleTable
+    - EBoxServicesRuleTable
+    - RedirectsTable
+    - SNAT
+
+modeldepends:
+    ToInternetRuleTable:
+        network/ServiceTable: [service]
+        network/ObjectTable: [source_object, destination_object]
+    InternalToEBoxRuleTable:
+        network/ServiceTable: [service]
+        network/ObjectTable: [source_object]
+    ExternalToEBoxRuleTable:
+        network/ServiceTable: [service]
+        network/ObjectTable: [source_object]
+    EBoxOutputRuleTable:
+        network/ServiceTable: [service]
+        network/ObjectTable: [destination_object]
+    ExternalToInternalRuleTable:
+        network/ServiceTable: [service]
+        network/ObjectTable: [source_object, destination_object]
+    RedirectsTable:
+        network/ObjectTable: [origDest_object, source_object]
+    SNAT:
+        network/ServiceTable: [service]
+        network/ObjectTable: [source_object, destination_object]
+

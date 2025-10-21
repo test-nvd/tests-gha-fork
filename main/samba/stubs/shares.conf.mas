@@ -1,0 +1,91 @@
+<%args>
+    @shares => ()
+    $unmanagedAcls => 0
+    $disableFullAudit => 0
+    $disable_home_share => 0
+
+    $recycle => 0
+    $recycle_exceptions => {}
+    $recycle_config => {}
+
+    $prefix => 'Zentyal'
+    $backup_path => '/tmp'
+</%args>
+<%init>
+use EBox::Gettext;
+</%init>
+% unless ($disable_home_share) {
+[homes]
+    comment = <% __('Home Directories') %>
+    path = /home/%S
+    read only = no
+    browseable = no
+    create mask = 0611
+    directory mask = 0711
+% my $rb = ($recycle xor defined($recycle_exceptions->{'users'}));
+% my $objects = 'acl_xattr';
+% unless ($disableFullAudit) {
+%   $objects .= ' full_audit';
+% }
+% if ($rb) {
+%   $objects .= ' recycle';
+% }
+    vfs objects = <% $objects %>
+    full_audit:facility = LOCAL7
+    full_audit:priority = ALERT
+    full_audit:prefix = %u|%I
+    full_audit:success = connect disconnect create_file pread_send pwrite_send renameat unlinkat mkdirat
+    full_audit:failure = connect disconnect create_file pread_send pwrite_send renameat unlinkat mkdirat
+% if ($rb) {
+%   foreach my $key (keys %{$recycle_config}) {
+%       next unless $key;
+    recycle: <% $key %> = <% $recycle_config->{$key} %>
+%   }
+% }
+% }
+
+# <% @shares ? "Shares\n" : "No shares configured" %>
+% foreach my $share (@shares) {
+[<% $share->{share} %>]
+% if ($share->{comment}) {
+    comment = <% $share->{comment} %>
+% }
+    path = <% $share->{path} %>
+    browseable = yes
+    force create mode = 0660
+    force directory mode = 0660
+% if ($share->{guest}) {
+    guest ok = yes
+    read only = no
+% } elsif ($unmanagedAcls) {
+    read only = no
+% } else {
+    valid users = <% $share->{validUsers} %>
+    read list = <% $share->{readOnly} %>
+    write list = <% $share->{readWrite} %>
+    admin users = <% $share->{administrators} %>
+% }
+% my $rb = ($recycle xor defined($recycle_exceptions->{'share'}->{$share->{'share'}}));
+% my $objects = 'acl_xattr';
+% unless ($disableFullAudit) {
+%   $objects .= ' full_audit';
+% }
+% if ($rb) {
+%   $objects .= ' recycle';
+% }
+    vfs objects = <% $objects %>
+% if ($unmanagedAcls) {
+    acl_xattr:ignore system acls = yes
+% }
+    full_audit:facility = LOCAL7
+    full_audit:priority = ALERT
+    full_audit:prefix = %u|%I
+    full_audit:failure = connect disconnect create_file pread_send pwrite_send renameat unlinkat mkdirat
+% if ($rb) {
+%   foreach my $key (keys %{$recycle_config}) {
+%       next unless $key;
+    recycle: <% $key %> = <% $recycle_config->{$key} %>
+%   }
+% }
+
+% }

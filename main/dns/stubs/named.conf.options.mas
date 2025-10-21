@@ -1,0 +1,55 @@
+<%args>
+  @forwarders
+  $keytabPath => undef
+  @intnet
+</%args>
+
+options {
+%   if (EBox::Config::boolean('sortlist')) {
+        sortlist {
+%           foreach my $intnet (@intnet) {
+                <% $intnet %>;
+%           }
+        };
+%   }
+	directory "/var/cache/bind";
+
+	// If there is a firewall between you and nameservers you want
+	// to talk to, you may need to fix the firewall to allow multiple
+	// ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+	//========================================================================
+	// If BIND logs error messages about the root key being expired,
+	// you will need to update your keys.  See https://www.isc.org/bind-keys
+	//========================================================================
+	dnssec-validation auto;
+
+	listen-on-v6 { none; };
+
+        // Hide Bind9 version
+        version "Unknown";
+
+%   if ( @forwarders > 0 ) {
+        // If your ISP provided one or more IP addresses for stable
+        // nameservers, you probably want to use them as forwarders.
+        forward first;
+        forwarders {
+%           foreach my $forwarder (@forwarders) {
+                <% $forwarder %>;
+%           }
+        };
+%   }
+
+%   if (defined $keytabPath) {
+        tkey-gssapi-keytab "<% $keytabPath %>";
+%   }
+
+    auth-nxdomain no;    # conform to RFC1035
+
+    allow-query { any; };
+    allow-recursion { trusted; };
+    allow-query-cache { trusted; };
+    allow-transfer { internal-local-nets; };
+};
+
+logging { category lame-servers { null; }; };

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Administrator Console
+Name[es]=Consola de Administrador
+Comment=Executes a root shell
+Comment[es]=Ejecuta una consola de root
+Exec=bash -c "pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY lxterminal"
+Icon=lxterminal
+Type=Application
+Categories=GTK;Utility;TerminalEmulator;

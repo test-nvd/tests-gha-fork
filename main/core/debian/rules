@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+include /usr/share/zbuildtools/1/rules/zentyal.mk
+
+DEB_CONFIGURE_EXTRA_FLAGS+= --with-systemd
+
+install/zentyal-core::
+	test -e debian/zentyal.init || ln -s ../src/scripts/zentyal.init.d debian/zentyal.init
+	rm -f $(CURDIR)/debian/ebox/var/lib/zentyal/conf/ebox.passwd
+
+binary-predeb/zentyal-core::
+	perl -w debian/dh_installscripts-common -p zentyal-core
+
+cleanbuilddir/zentyal-core::
+	rm -f debian/zentyal.init
+
+clean::
+	debconf-updatepo

@@ -1,0 +1,521 @@
+#!/usr/bin/env bash
+RUNNING=/var/lib/zentyal/tmp/.smart-admin-running
+
+touch $RUNNING
+
+function system_check() {
+	echo -e "Subject: System report\n"
+	echo -e "\n##################"
+	echo -e "# GENERAL CHECKS #"
+	echo -e "##################"
+
+	## Hostname
+	echo -e "\n########"
+	echo -e "## Hostname"
+	echo -e "########\n"
+
+	hostname -f
+
+
+	## Hosts file
+	echo -e "\n########"
+	echo -e "## Hosts"
+	echo -e "########\n"
+
+	cat /etc/hosts
+
+
+	## Resolv file
+	echo -e "\n########"
+	echo -e "## Resolv"
+	echo -e "########\n"
+
+	cat /etc/resolv.conf
+
+	## System's version
+	echo -e "\n########"
+	echo -e "## Version of Zentyal and Ubuntu"
+	echo -e "########\n"
+
+	dpkg -l zentyal-core | tail -1 | awk '{print $2,$3}' | sed 's/-core//' | tr -s "z" "Z"
+
+	lsb_release -sd
+
+
+	## Zentyal's modules
+	echo -e "\n########"
+	echo -e "## Zentyal's modules installed"
+	echo -e "########\n"
+
+	dpkg -l | egrep "^ii  zentyal-" | awk '{print $1,$2,$3}'
+
+
+	## Modules enabled
+	echo -e "\n########"
+	echo -e "## Modules which are enabled"
+	echo -e "########\n"
+
+	ZEN_MOD=$(zs notexist status 2> /dev/null | tail -1)
+
+	for zenmod in ${ZEN_MOD}
+	do
+		zs $zenmod enabled
+	done
+
+
+	## Modules status
+	echo -e "\n########"
+	echo -e "## Status of each modules"
+	echo -e "########\n"
+
+	for zenmod in ${ZEN_MOD}
+	do
+		zs $zenmod status
+	done
+
+
+	## Commercial Edition
+	echo -e "\n########"
+	echo -e "## Zentyal Commercial Edition"
+	echo -e "########\n"
+
+	if [ -f /var/lib/zentyal/.license ]; then
+		echo -ne "The license key is: "
+		cat /var/lib/zentyal/.license
+	else
+		echo -e "The server doesn't have a license key."
+	fi
+
+
+	## Stubs
+	echo -e "\n########"
+	echo -e "## Zentyal Stubs"
+	echo -e "########\n"
+
+	if [ -d /etc/zentyal/stubs/ ]; then
+		find /etc/zentyal/stubs/ -type f -iname "*.mas"
+	fi
+
+	## Stubs
+	echo -e "\n########"
+	echo -e "## Zentyal Hooks"
+	echo -e "########\n"
+
+	if [ -d /etc/zentyal/hooks/ ]; then
+		find /etc/zentyal/hooks/ -not -name "template.*" -type f
+	fi
+
+	## Uptime
+	echo -e "\n########"
+	echo -e "## Uptime "
+	echo -e "########\n"
+
+	echo -ne "Uptime's server: "
+		uptime -p
+
+
+	# Memory
+	echo -e "\n########"
+	echo -e "## Memory "
+	echo -e "########\n"
+
+	echo -ne "Total memory: "
+		free -m | awk '{ print $2 " MB"}' | head -2 | tail -1
+
+	echo -ne "Memory usage: "
+  	free -m | awk 'NR==2{printf "%.2f%%\n", $3*100/$2}'
+
+	echo -ne "SWAP usage: "
+  	free -m | awk '{ print $3 " MB"}' | tail -1
+
+
+	## CPU
+	echo -e "\n########"
+	echo -e "## CPU "
+	echo -e "########\n"
+
+	echo -ne "Total cores: "
+  	grep 'cpu cores' /proc/cpuinfo | cut -d ':' -f2 | head -1
+
+	echo -ne "CPU load average (1m,5m,15m):"
+		top -bn1 | egrep -o "load average:.*" | cut -d ":" -f2 | tr -s "," "."
+
+
+	## Hard Drive
+	echo -e "\n########"
+	echo -e "## Hard Drives and partitions"
+	echo -e "########\n"
+
+	lsblk
+
+	echo -e "\n## Disk usage: \n"
+		df -Th | egrep -v 'tmpfs|udev'
+
+
+	## Network Interfaces
+	echo -e "\n########"
+	echo -e "## Network Interfaces"
+	echo -e "########\n"
+
+	echo -e "## Interfaces available with their status: \n"
+		ip addr show | egrep ': .*: <' | awk '{print $2,$9}' | egrep -v 'lo:'
+
+	echo -e "\n## IPs configured: \n"
+		ip -4 a | grep 'inet ' | egrep -v '127.' | sed "s/[0-9]://" | sed 's/    //'
+
+	echo -en "\n## Network Interfaces where were 'Down': "
+		grep -a 'Link is Down' /var/log/syslog | wc -l
+
+
+	## Repositories
+	echo -e "\n########"
+	echo -e "## Repositories"
+	echo -e "########\n"
+
+	echo -e "## Repositories configured:\n"
+		egrep -v '^(#|$)' /etc/apt/sources.list
+
+	echo -e "\n## Custom repositories:\n"
+		find /etc/apt/sources.list.d/ -iname "*.list" -type f -exec ls {} \; -exec egrep -v '^(#|$)' {} \; -exec echo -e "" \;
+
+	echo -e "\n## Check if the repositories access is correct:\n"
+		apt update
+
+
+	## Packages
+	echo -e "\n########"
+	echo -e "## Server packages"
+	echo -e "########\n"
+
+	echo -ne "Broken packages: "
+		dpkg -l |egrep -v '^ii|rc' | awk '{if(NR>5)print}' | wc -l
+
+	echo -ne "Upgradable packages: "
+		apt list --upgradable 2>/dev/null | awk 'NR!=1' | wc -l
+
+	echo -ne "Last update by Zentyal: "
+		grep 'Starting automatic update' /var/log/zentyal/software.log{,.1} 2> /dev/null | cut -d ":" -f2 | awk '{print $1}' | sort | tail -1
+  	echo ""
+
+
+	## System emails
+	echo -e "\n########"
+	echo -e "## System emails"
+	echo -e "########\n"
+
+	for user in $(ls /var/mail/); do
+		echo -n "Number of emails for user '${user}': "
+		grep 'Message-Id:' /var/mail/${user} | wc -l
+	done
+
+
+	## Mysql daemon status
+	echo -e "\n########"
+	echo -e "## Mysql daemon"
+	echo -e "########\n"
+
+	systemctl is-failed mysql
+
+
+	## Mysql databases
+	echo -e "\n########"
+	echo -e "## Mysql databases"
+	echo -e "########\n"
+
+	echo -e "\n## Databases available: \n"
+		mysql -u root -p$(cat /var/lib/zentyal/conf/zentyal-mysql.passwd) -e "show databases;" 2> /dev/null
+
+	echo -e "\n## Mysql databases check: \n"
+		mysqlcheck -u root -p$(cat /var/lib/zentyal/conf/zentyal-mysql.passwd) --all-databases 2> /dev/null
+}
+
+function dc_check () {
+	echo -e "\n############################"
+	echo -e "# DOMAIN CONTROLLER CHECKS #"
+	echo -e "############################"
+
+	## Domain information
+	echo -e "\n###############"
+	echo -e "## General information"
+	echo -e "###############\n"
+
+	echo -ne "## Domain users: "
+	samba-tool user list 2>/dev/null | wc -l
+
+	echo -ne "## Domain groups: "
+	samba-tool group list 2>/dev/null | wc -l
+
+	echo -ne "## Domain computers: "
+	ldbsearch -H /var/lib/samba/private/sam.ldb '(objectClass=computer)' dn 2>/dev/null | egrep '^dn: ' | wc -l
+
+	echo -ne "## Home directory size: "
+	du -hs --exclude=samba /home/ | awk '{print $1}'
+
+	echo -ne "## Default shares size: "
+	du -hs /home/samba/shares/ | awk '{print $1}'
+
+	echo -ne "## Roaming profile parent directory size: "
+	du -hs /home/samba/profiles/ | awk '{print $1}'
+
+
+	## DNS user
+	echo -e "\n########"
+	echo -e "## DNS user"
+	echo -e "########\n"
+
+	samba-tool user list 2> /dev/null | grep '^dns-'
+
+	## DnsAdmins group
+	echo -e "\n########"
+	echo -e "## DnsAdmins group"
+	echo -e "########\n"
+
+	samba-tool group listmembers DnsAdmins 2> /dev/null | grep '^dns-'
+
+	## DNS user expire
+	echo -e "\n########"
+	echo -e "## DNS user password flags"
+	echo -e "########\n"
+
+	for dnsusers in $(samba-tool user list 2> /dev/null | grep 'dns-'); do
+		echo -ne "Usuario: ${dnsusers} -> "
+			pdbedit -d0 -Lvu ${dnsusers} | grep "^Account Flags" | tr -s " " " " | tr -s "[]" "_" | cut -d "_" -f2
+	done
+
+
+	## DNS user ticket
+	echo -e "\n########"
+	echo -e "## DNS user ticket"
+	echo -e "########\n"
+
+	DNSUSER=$(samba-tool user list 2> /dev/null | grep -oi "dns-${HOSTNAME}")
+
+	if pdbedit -d0 -Lv -u ${DNSUSER} | grep "^Account Flags" | tr -s " " " " | tr -s "[]" "_" | cut -d "_" -f2 | grep -qo 'X'; then
+		echo -e "Getting a Kerberos ticket for '${DNSUSER}' ...\n"
+			kinit -k -t /var/lib/samba/bind-dns/dns.keytab ${DNSUSER}
+		if [[ $? -eq 0 ]]; then
+			klist
+		fi
+	else
+		echo "Skipping the check for Kerberos ticket for '${DNSUSER}' because its password isn't set as 'noexpiry'."
+	fi
+
+
+	## Samba daemons
+	echo -e "\n########"
+	echo -e "## Status of old Samba daemon"
+	echo -e "########\n"
+
+	echo -ne "## Daemons' information: \n"
+
+		for daemon in smbd nmbd winbind sssd; do
+			echo -n "Status of the daemon: '${daemon}': "
+				systemctl is-active ${daemon}
+
+			echo -n "State of the daemon: '${daemon}': "
+				systemctl is-enabled ${daemon} 2> /dev/null
+
+			echo ""
+		done
+
+
+	## Samba database check
+	echo -e "\n########"
+	echo -e "## Samba database check"
+	echo -e "########\n"
+
+	samba-tool dbcheck --cross-ncs | tail -1
+
+
+	## FSMO OWNER
+	echo -e "\n########"
+	echo -e "## FSMO OWNER"
+	echo -e "########\n"
+
+	samba-tool fsmo show 2> /dev/null
+
+
+	## Number of Domain Controllers
+	echo -e "\n########"
+	echo -e "## Domain Controllers configured"
+	echo -e "########\n"
+
+	ldbsearch -H /var/lib/samba/private/sam.ldb '(invocationId=*)' --cross-ncs objectguid 2>/dev/null | egrep "(dn|objectGUID):"
+
+
+	## DNS aliases for Domain Controllers
+	echo -e "\n########"
+	echo -e "## DNS alias"
+	echo -e "########\n"
+
+	for dc in $(ldbsearch -H /var/lib/samba/private/sam.ldb '(invocationId=*)' --cross-ncs objectguid 2> /dev/null | egrep "(objectGUID):" | cut -d ":" -f2 | sed "s/ //"); do
+		host -t CNAME $dc._msdcs.$(hostname -d);
+	done
+
+
+	## Domain controllers sync
+	echo -e "\n########"
+	echo -e "## Domain controllers sync"
+	echo -e "########\n"
+
+	samba-tool drs showrepl 2>/dev/null
+}
+
+function log_files () {
+	declare -r zentyal_log="/var/log/zentyal/zentyal.log"
+	declare -A ErrorModules
+	declare -A WarningModules
+
+	ErrorModules=([network]=0 [logs]=0 [mysql]=0 [firewall]=0 [ntp]=0 [dhcp]=0 [dns]=0 [samba]=0 [mail]=0 [sogo]=0 [openvpn]=0 [ipsec]=0 [squid]=0 [ejabber]=0)
+	WarningModules=([network]=0 [logs]=0 [mysql]=0 [firewall]=0 [ntp]=0 [dhcp]=0 [dns]=0 [samba]=0 [mail]=0 [sogo]=0 [openvpn]=0 [ipsec]=0 [squid]=0 [ejabber]=0)
+
+	while IFS='' read -r line; do
+		for i in "${!ErrorModules[@]}"; do
+			if [[ ${line,,} =~ ${i} ]] && [[ ${line} =~ "ERROR>" ]]; then
+				((ErrorModules[$i]+=1))
+		elif [[ ${line,,} =~ ${i} && ( ${line} =~ "WARN>" ) ]]; then
+				((WarningModules[$i]+=1))
+		fi
+
+	done
+	done < "${zentyal_log}"
+
+	echo -e "\n#####################"
+	echo -e "# ZENTYAL LOG FILE  #"
+	echo -e "#####################"
+
+	echo -e "\n## Errors and Warnings found in the last two months."
+	echo -e "\n## Errors found:"
+		printf "%s\n" "${!ErrorModules[@]}" "${ErrorModules[@]}" | pr -2t
+	echo -e "\n## Warnings found:"
+		printf "%s\n" "${!WarningModules[@]}" "${WarningModules[@]}" | pr -2t
+}
+
+function mail_status() {
+	echo -e "\n################"
+	echo -e "# Mails status #"
+	echo -e "################\n"
+
+	echo -ne "## Email directory size: "
+	du -hs /var/vmail/ | awk '{print $1}'
+
+	local CURMONTH=$(date '+%b')
+	local LASTMONTH=$(date -d "1 month ago" '+%b')
+	local maillog="/var/log/mail.log"
+
+	echo -ne "\n## Number of email in queue: "
+		expr $(mailq -bp | wc -l) - 1
+
+	echo -e "\n## Status of the emails that were sent and received last two months:"
+
+	echo -en "\tSent: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${maillog} | grep -o 'status=sent' | wc -l
+
+	echo -en "\tRejected: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${maillog} | grep -o 'status=reject' | wc -l
+
+	echo -en "\tDeferred: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${maillog} | grep -o 'status=deferred' | wc -l
+
+	echo -en "\tBounced: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${maillog} | grep -o 'status=bounced' | wc -l
+
+	echo -en "\tAnalized by Mailfilter: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${maillog} | grep -o 'Hits: ' | wc -l
+
+	echo -en "\tWith virus: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${maillog} | grep -o 'Blocked INFECTED' | wc -l
+
+	echo -en "\tBlocked for SPAM: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${maillog} | grep -o 'Blocked SPAM' | wc -l
+
+	echo -en "\tBlocked for the type of file: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${maillog} | grep -o 'Blocked BANNED' | wc -l
+}
+
+function log_access() {
+	echo -e "\n###################"
+	echo -e "# Login accesses #"
+	echo -e "###################\n"
+
+	local ZENCURMONTH=$(date '+%Y/%m/')
+	local ZENLASTMONTH=$(date -d "1 month ago" '+%Y/%m/')
+	local zenlog="/var/log/zentyal/zentyal.log"
+	local CURMONTH=$(date '+%b')
+	local LASTMONTH=$(date -d "1 month ago" '+%b')
+	local sshlog="/var/log/auth.log"
+	local SogoCURMONTH=$(date '+%b')
+	local SogoLASTMONTH=$(date -d "1 month ago" '+%b')
+	local sogolog="/var/log/sogo/sogo.log"
+
+	echo -n "Successful accesses to the Zentyal Admin Interface: "
+		egrep -a "^(${CURMONTH}|${LASTMONTH}).*>" ${zenlog} | grep -a 'check - Successfully authenticated user' | wc -l
+
+	echo -n "Failed accesses to the Zentyal Admin Interface: "
+		egrep -a "^(${CURMONTH}|${LASTMONTH}).*>" ${zenlog} | grep -a '_login - Failed login from:' | wc -l
+
+	echo -en "\nSuccessful accesses from SSH: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${sshlog} | egrep "sshd\[.*\]: Accepted password for" | wc -l
+
+	echo -n "Failed accesses from SSH: "
+		egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${sshlog} | egrep "sshd\[.*\]: Failed password for" | wc -l
+
+	if [[ -f ${sogolog} ]]; then
+		echo -en "\nSuccessful accesses  to Sogo Web Interface: "
+			egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${sogolog} | egrep "SOGoRootPage successful login" | wc -l
+
+		echo -n "Failed accesses to Sogo Web Interface: "
+			egrep -i "^(${CURMONTH}|${SSHLASTMONTH})" ${sogolog} | egrep "SOGoRootPage Login from .* might not have worked"| wc -l
+	fi
+}
+
+function antivirus_check() {
+	echo -e "\n###################"
+	echo -e "# Antivirus module #"
+	echo -e "###################\n"
+
+	for db in main daily bytecode
+	do
+		DBCHECK=$(egrep "${db}(.cvd|.cld) updated" /var/log/clamav/freshclam.log{.1,} 2>/dev/null | tac | head -1 | cut -d ":" -f2 | awk '{print $1,$2,$3}')
+		echo "Last update of the '${db}' database file: ${DBCHECK}"
+	done
+
+	echo -en "\nNumber of Virus detected: "
+		grep  'FOUND' /var/log/clamav/clamav.log | wc -l
+}
+
+
+## Checking that the script is runned as root
+if [[ $(id -u) -ne 0 ]]; then
+	echo "You need to run the script with admin rights, please, run it using 'sudo'."
+	exit 2
+fi
+
+## Running the main function
+system_check
+
+## Running log access function
+log_access
+
+## Running log_files function
+log_files
+
+## Running antivirus_check
+dpkg -l | grep -q 'zentyal-antivirus'
+if [[ ${?} -eq 0 ]] && zs antivirus enabled | grep -qo "ENABLED"; then
+	antivirus_check
+fi
+
+## Running the DC funcion
+dpkg -l | grep -q 'zentyal-samba'
+if [[ ${?} -eq 0 ]] && zs samba enabled | grep -qo "ENABLED"; then
+	dc_check
+fi
+
+## Running mail_status function
+dpkg -l | grep -q 'zentyal-mail'
+if [[ ${?} -eq 0 ]] && zs mail enabled | grep -qo "ENABLED"; then
+	mail_status
+fi
+
+rm -f $RUNNING
