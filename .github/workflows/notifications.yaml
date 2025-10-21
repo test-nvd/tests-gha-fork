@@ -27,7 +27,6 @@ jobs:
       - name: DEBUG
         run: echo '${{ toJson(github.event) }}'
 
-    steps:
       - name: Prepare Slack payload
         id: payload
         run: |
