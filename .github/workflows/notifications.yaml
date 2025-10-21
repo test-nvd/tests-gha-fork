@@ -1,0 +1,103 @@
+name: Notifications for PRs and Issues
+
+on:
+  pull_request:
+    types: [opened, reopened, closed]
+  issues:
+    types: [opened, reopened, closed]
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  notify-slack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Build Slack message
+        id: slack_message
+        run: |
+          EVENT_TYPE=${{ github.event_name }}
+          ACTION=${{ github.event.action }}
+          REPO=${{ github.repository }}
+          ACTOR=${{ github.actor }}
+          RUN_URL="https://github.com/${REPO}/actions/runs/${{ github.run_id }}"
+
+          TARGET=""
+          TITLE=""
+          URL=""
+          EMOJI=""
+          COLOR="#AAAAAA"
+
+          if [ "$EVENT_TYPE" = "pull_request" ]; then
+            TARGET="Pull Request"
+            TITLE="${{ github.event.pull_request.title }}"
+            URL="${{ github.event.pull_request.html_url }}"
+            case "$ACTION" in
+              opened)   EMOJI=":sparkles:"; COLOR="#36C5F0" ;;
+              reopened) EMOJI=":repeat:";   COLOR="#ECB22E" ;;
+              closed)   EMOJI=":white_check_mark:"; COLOR="#2EB67D" ;;
+              *)        EMOJI=":twisted_rightwards_arrows:"; COLOR="#AAAAAA" ;;
+            esac
+          elif [ "$EVENT_TYPE" = "issues" ]; then
+            TARGET="Issue"
+            TITLE="${{ github.event.issue.title }}"
+            URL="${{ github.event.issue.html_url }}"
+            case "$ACTION" in
+              opened)   EMOJI=":bug:";     COLOR="#E01E5A" ;;
+              reopened) EMOJI=":recycle:"; COLOR="#ECB22E" ;;
+              closed)   EMOJI=":white_check_mark:"; COLOR="#2EB67D" ;;
+              *)        EMOJI=":memo:";    COLOR="#AAAAAA" ;;
+            esac
+          elif [ "$EVENT_TYPE" = "issue_comment" ]; then
+            TARGET="Comment"
+            TITLE="${{ github.event.issue.title }}"
+            URL="${{ github.event.comment.html_url }}"
+            EMOJI=":speech_balloon:"
+            COLOR="#4A154B"  # púrpura Slack
+          fi
+
+          echo "payload<<EOF" >> $GITHUB_OUTPUT
+          cat <<EOT >> $GITHUB_OUTPUT
+          {
+            "text": "$EMOJI *$ACTION on $TARGET*",
+            "attachments": [
+              {
+                "color": "$COLOR",
+                "blocks": [
+                  {
+                    "type": "header",
+                    "text": { "type": "plain_text", "text": "$EMOJI $ACTION on $TARGET", "emoji": true }
+                  },
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*Repository:* <$GITHUB_SERVER_URL/$REPO|$REPO>\n*User:* $ACTOR\n*Action:* $ACTION"
+                    }
+                  },
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*Title:* <$URL|$TITLE>"
+                    }
+                  },
+                  {
+                    "type": "context",
+                    "elements": [
+                      { "type": "mrkdwn", "text": "<$RUN_URL|View workflow run>" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+          EOT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: ${{ steps.slack_message.outputs.payload }}
