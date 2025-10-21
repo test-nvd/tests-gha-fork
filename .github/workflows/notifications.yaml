@@ -59,7 +59,7 @@ jobs:
           echo "payload<<EOF" >> $GITHUB_OUTPUT
           cat <<EOT >> $GITHUB_OUTPUT
           {
-            "text": "Feedback from community*",
+            "text": "*Feedback from community*",
             "attachments": [
               {
                 "color": "$COLOR",
