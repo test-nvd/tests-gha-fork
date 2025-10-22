@@ -41,7 +41,6 @@ acl "trusted" {
 % }
     localhost;
     localnets;
-    192.168.56.0/24;
 };
 
 acl "internal-local-nets" {
