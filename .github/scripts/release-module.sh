@@ -49,7 +49,8 @@ function generate_changelog() {
     cd "${module}"
     ${SCRIPT_UPDATE_CHANGELOG} "${ZENTYAL_BASE}" "${ZENTYAL_URGENCY}" "${GIT_USERNAME}" "${GIT_EMAIL}"
 
-    if ! $(git status -s | egrep -o '^ M debian/changelog$'); then
+    # REVISAR
+    if ! git status -s | egrep -o '^ M debian/changelog$'; then
         echo "No changes detected in debian/changelog for module: ${module}. Skipping release."
         return 0
     fi

@@ -1,10 +1,13 @@
 name: Release module
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
+  # pull_request:
+  #   types: [closed]
+  #   branches:
+  #     - main
 
 permissions:
   contents: write
@@ -17,7 +20,7 @@ env:
 
 jobs:
   release-changes:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     outputs:
       changed_modules: ${{ steps.detect.outputs.changed_modules }}
