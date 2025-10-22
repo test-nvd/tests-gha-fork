@@ -82,7 +82,6 @@ if [[ $# -lt 1 ]]; then
 fi
 
 argument=${1}
-ALL_CHANGED_FILES="extra/zenbuntu-desktop/ChangeLog extra/zenbuntu-desktop/x11-setup main/core/ChangeLog main/core/src/scripts/checker-cpu"
 ALL_CHANGED_FILES="${ALL_CHANGED_FILES:-}"
 
 if [[ -z "${ALL_CHANGED_FILES}" ]]; then
