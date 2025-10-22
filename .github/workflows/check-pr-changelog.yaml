@@ -34,6 +34,7 @@ jobs:
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
 
+      # https://cli.github.com/manual/gh_api
       - name: Request changes for missing ChangeLogs
         if: steps.detect-module.outputs.missing_changelog_modules != ''
         env:
@@ -44,5 +45,4 @@ jobs:
             -f event="REQUEST_CHANGES" \
             -f body="🚨 ChangeLog missing for module(s): ${{ steps.detect-module.outputs.missing_changelog_modules }}.
             Please update the ChangeLog file(s) as described in the following link:
-              * https://github.com/djoven89/tests-gha/blob/main/.github/changelog.md
-            "
+              * https://github.com/djoven89/tests-gha/blob/main/.github/changelog.md"

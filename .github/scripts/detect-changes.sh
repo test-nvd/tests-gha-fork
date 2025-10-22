@@ -47,7 +47,7 @@ function get_missing_changelogs() {
 
     # Check each changed module for ChangeLog updates
     for mod in "${modules[@]}"; do
-        if ! echo "${files}" | grep -q "^${mod}/ChangeLog"; then
+        if ! grep -q "${mod}/ChangeLog" <<< "${files}"; then
             missing+=("$mod")
         fi
     done

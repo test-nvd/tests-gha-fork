@@ -1,0 +1,103 @@
+name: Release module
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  SCRIPT_DETECT: .github/scripts/detect-changes.sh
+  SCRIPT_RELEASE_MODULE: ./github/scripts/release-module.sh
+  ZENTYAL_VERSION: 8.0
+
+jobs:
+  release-changes:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      changed_modules: ${{ steps.detect.outputs.changed_modules }}
+
+    steps:
+      # https://github.com/actions/checkout
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # https://github.com/tj-actions/changed-files
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            extra/**
+            main/**
+
+      - name: Get changed modules
+        id: detect
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: ${{ env.SCRIPT_DETECT }} changed-modules
+
+      - name: Commit, tag and release changes
+        env:
+          MODULES: ${{ steps.detect.outputs.changed_modules }}
+        run: |
+          echo "Creating tags and releases for modules: $MODULES"
+          ${{ env.SCRIPT_RELEASE_MODULE }} "$MODULES"
+
+  generate-packages:
+    needs: release-changes
+    runs-on: ubuntu-22.04
+    env:
+      MODULES: ${{ needs.release-changes.outputs.changed_modules }}
+
+    steps:
+      - name: Packages to generate
+        run: |
+          echo "Generating packages for modules: $MODULES"
+
+      # https://github.com/actions/checkout
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y wget po-debconf
+
+      - name: Add Zentyal repository
+        run: |
+          echo "deb [trusted=yes] http://packages.zentyal.org/zentyal ${{ env.ZENTYAL_VERSION }} main extra" | sudo tee /etc/apt/sources.list.d/zentyal.list
+          sudo apt update
+
+      - name: Install zbuildtools
+        run: |
+          sudo apt install -y zbuildtools
+
+      - name: Create temporal directory for the package
+        run: |
+          mkdir -p ~/zentyal-packages
+
+      - name: Generate packages
+        run: |
+          for module in $MODULES; do
+            echo "Generating package for module: $module"
+            cd ${module}
+            zentyal-package
+            ls -la debs-ppa/
+            cp -v debs-ppa/*.{deb,dsc,xz,gz} ~/zentyal-packages/
+            cd -
+          done
+          ls -la ~/zentyal-packages/
+
+  release-packages:
+    needs: generate-packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: |
+          echo "Publishing packages."
