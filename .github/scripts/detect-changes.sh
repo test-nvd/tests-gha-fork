@@ -27,33 +27,42 @@ function get_changed_modules() {
     local files="$1"
     local modules=()
 
-    # Search for modules with structure main/* or extra/*
-    for file in ${files}; do
+    # Read each file (space or newline)
+    while read -r file; do
         if [[ $file =~ ^(extra|main)/([^/]+)/ ]]; then
             local module="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
             modules+=("$module")
         fi
-    done
+    done <<< "${files// /$'\n'}"  # <-- convert spaces to newlines
 
-    # Remove duplicates and return result
     mapfile -t unique_modules < <(printf "%s\n" "${modules[@]}" | sort -u)
     echo "${unique_modules[@]}"
 }
 
+
 function get_missing_changelogs() {
     local files="$1"
-    local modules=($(get_changed_modules "$files"))
     local missing=()
 
-    # Check each changed module for ChangeLog updates
-    for mod in "${modules[@]}"; do
-        if ! grep -q "${mod}/ChangeLog" <<< "${files}"; then
+    # Get modules, one per line
+    local modules
+    modules=$(get_changed_modules "$files")
+
+    # Convert list of files to line format
+    local file_list
+    file_list=$(echo "${files// /$'\n'}")
+
+    # Read module line by line to avoid concatenations
+    while read -r mod; do
+        [[ -z "$mod" ]] && continue
+        if ! grep -qx "${mod}/ChangeLog" <<< "${file_list}"; then
             missing+=("$mod")
         fi
-    done
+    done <<< "${modules// /$'\n'}"
 
     echo "${missing[@]}"
 }
+
 
 function export_for_github() {
     local key="$1"
@@ -73,6 +82,7 @@ if [[ $# -lt 1 ]]; then
 fi
 
 argument=${1}
+ALL_CHANGED_FILES="extra/zenbuntu-desktop/ChangeLog extra/zenbuntu-desktop/x11-setup main/core/ChangeLog main/core/src/scripts/checker-cpu"
 ALL_CHANGED_FILES="${ALL_CHANGED_FILES:-}"
 
 if [[ -z "${ALL_CHANGED_FILES}" ]]; then

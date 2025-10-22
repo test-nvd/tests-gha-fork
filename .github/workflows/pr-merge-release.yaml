@@ -1,17 +1,25 @@
 name: Release module
 
 on:
-  push:
-    branches:
-      - main
   # pull_request:
   #   types: [closed]
   #   branches:
   #     - main
+  push:
+    branches:
+      - main
+      - '7.0'
+      - '7.1'
+      - '8.0'
+    paths:
+      - 'main/**/ChangeLog'
+      - 'extra/**/ChangeLog'
+      - '!main/**/debian/changelog'
+      - '!extra/**/debian/changelog'
 
 permissions:
   contents: write
-  pull-requests: write
+  # pull-requests: write
 
 env:
   SCRIPT_DETECT: .github/scripts/detect-changes.sh
@@ -64,39 +72,39 @@ jobs:
         run: |
           echo "Generating packages for modules: $MODULES"
 
-      # https://github.com/actions/checkout
-      - name: Checkout repo
-        uses: actions/checkout@v5
+      # # https://github.com/actions/checkout
+      # - name: Checkout repo
+      #   uses: actions/checkout@v5
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y wget po-debconf
+      # - name: Install dependencies
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install -y wget po-debconf
 
-      - name: Add Zentyal repository
-        run: |
-          echo "deb [trusted=yes] http://packages.zentyal.org/zentyal ${{ env.ZENTYAL_VERSION }} main extra" | sudo tee /etc/apt/sources.list.d/zentyal.list
-          sudo apt update
+      # - name: Add Zentyal repository
+      #   run: |
+      #     echo "deb [trusted=yes] http://packages.zentyal.org/zentyal ${{ env.ZENTYAL_VERSION }} main extra" | sudo tee /etc/apt/sources.list.d/zentyal.list
+      #     sudo apt update
 
-      - name: Install zbuildtools
-        run: |
-          sudo apt install -y zbuildtools
+      # - name: Install zbuildtools
+      #   run: |
+      #     sudo apt install -y zbuildtools
 
-      - name: Create temporal directory for the package
-        run: |
-          mkdir -p ~/zentyal-packages
+      # - name: Create temporal directory for the package
+      #   run: |
+      #     mkdir -p ~/zentyal-packages
 
-      - name: Generate packages
-        run: |
-          for module in $MODULES; do
-            echo "Generating package for module: $module"
-            cd ${module}
-            zentyal-package
-            ls -la debs-ppa/
-            cp -v debs-ppa/*.{deb,dsc,xz,gz} ~/zentyal-packages/
-            cd -
-          done
-          ls -la ~/zentyal-packages/
+      # - name: Generate packages
+      #   run: |
+      #     for module in $MODULES; do
+      #       echo "Generating package for module: $module"
+      #       cd ${module}
+      #       zentyal-package
+      #       ls -la debs-ppa/
+      #       cp -v debs-ppa/*.{deb,dsc,xz,gz} ~/zentyal-packages/
+      #       cd -
+      #     done
+      #     ls -la ~/zentyal-packages/
 
   release-packages:
     needs: generate-packages
