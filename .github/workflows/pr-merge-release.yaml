@@ -48,6 +48,7 @@ jobs:
       - name: Commit, tag and release changes
         env:
           MODULES: ${{ steps.detect.outputs.changed_modules }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "Creating tags and releases for modules: $MODULES"
           ${{ env.SCRIPT_RELEASE_MODULE }} "$MODULES"
