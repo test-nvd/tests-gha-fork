@@ -1,4 +1,4 @@
-name: Release module
+name: Debug Workflow
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ env:
 
 jobs:
   tests:
-    if: workflow.event == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
