@@ -113,6 +113,14 @@ function system_check() {
 	echo -ne "Uptime's server: "
 		uptime -p
 
+	## Kernel
+	echo -e "\n########"
+	echo -e "## Kernel "
+	echo -e "########\n"
+
+	echo -ne "Kernel in use: "
+		uname -r
+
 
 	# Memory
 	echo -e "\n########"
