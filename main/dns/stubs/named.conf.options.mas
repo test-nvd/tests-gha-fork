@@ -47,7 +47,7 @@ options {
     auth-nxdomain no;    # conform to RFC1035
 
     allow-query { any; };
-    allow-recursion { trusted; };
+    allow-recursion { any; };
     allow-query-cache { trusted; };
     allow-transfer { internal-local-nets; };
 };
