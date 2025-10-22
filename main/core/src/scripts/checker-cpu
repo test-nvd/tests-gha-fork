@@ -41,5 +41,5 @@ done
 if [[ ${COUNT} -gt 1 ]]; then
   notification_telegram "${1}" "${2} ${CPULOAD}" "${3}" "${4}"
 else
-    echo -e "\nYour CPU is ok."
+    echo -e "\nYour CPU is everything OK."
 fi
