@@ -16,7 +16,7 @@ permissions:
 env:
   SCRIPT_DETECT: .github/scripts/detect-changes.sh
   SCRIPT_RELEASE_MODULE: .github/scripts/release-module.sh
-  ZENTYAL_VERSION: 8.0
+  ZENTYAL_VERSION: "8.0"
 
 jobs:
   release-changes:
