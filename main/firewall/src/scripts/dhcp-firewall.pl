@@ -39,7 +39,7 @@ while ($timeout) {
 		exit(0);
 	} catch (EBox::Exceptions::Lock $e) {
 		sleep 5;
-		$timeout -= 5;
+		$timeout -= 10;
 	}
 }
 
