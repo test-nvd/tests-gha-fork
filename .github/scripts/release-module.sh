@@ -4,7 +4,7 @@
 
 # This script releases an updated modules.
 
-set -euo pipefail
+set -xeuo pipefail
 IFS=$'\n\t'
 
 ###
