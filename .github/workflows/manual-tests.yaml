@@ -1,0 +1,28 @@
+name: Release module
+
+on:
+  workflow_dispatch:
+
+
+permissions:
+  contents: write
+
+env:
+  SCRIPT_DETECT: .github/scripts/detect-changes.sh
+  SCRIPT_RELEASE_MODULE: ./github/scripts/release-module.sh
+  ZENTYAL_VERSION: 8.0
+
+jobs:
+  tests:
+    if: workflow.event == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      # https://github.com/actions/checkout
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: DEBUG
+        run: |
+          Working directory: $(pwd)
+          ls -la .
