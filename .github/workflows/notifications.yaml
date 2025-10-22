@@ -1,93 +1,77 @@
 name: Notifications for PRs and Issues
 
 on:
-  pull_request:
-    types: [opened, reopened, closed]
+  pull_request_target:
+    types: [opened, reopened, closed, edited]
   issues:
-    types: [opened, reopened, closed]
+    types: [opened, reopened, closed, edited]
   issue_comment:
     types: [created, edited]
 
 jobs:
   notify-slack:
     runs-on: ubuntu-latest
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+      ACTION: ${{ github.event.action }}
+      REPO: ${{ github.repository }}
+      ACTOR: ${{ github.actor }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      ISSUE_URL: ${{ github.event.issue.html_url }}
+      COMMENT_URL: ${{ github.event.comment.html_url }}
+      RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
     steps:
-      - name: Build Slack message
-        id: slack_message
-        run: |
-          EVENT_TYPE=${{ github.event_name }}
-          ACTION=${{ github.event.action }}
-          REPO=${{ github.repository }}
-          ACTOR=${{ github.actor }}
-          RUN_URL="https://github.com/${REPO}/actions/runs/${{ github.run_id }}"
+      - name: DEBUG
+        run: echo '${{ toJson(github.event) }}'
 
+      - name: Prepare Slack payload
+        id: payload
+        run: |
           TARGET=""
           TITLE=""
           URL=""
-          EMOJI=""
-          COLOR="#AAAAAA"
+          EMOJI=":bell:"
 
-          if [ "$EVENT_TYPE" = "pull_request" ]; then
+          if [ "$EVENT_NAME" = "pull_request_target" ]; then
             TARGET="Pull Request"
-            TITLE="${{ github.event.pull_request.title }}"
-            URL="${{ github.event.pull_request.html_url }}"
-            case "$ACTION" in
-              opened)   EMOJI=":sparkles:"; COLOR="#36C5F0" ;;
-              reopened) EMOJI=":repeat:";   COLOR="#ECB22E" ;;
-              closed)   EMOJI=":white_check_mark:"; COLOR="#2EB67D" ;;
-              *)        EMOJI=":twisted_rightwards_arrows:"; COLOR="#AAAAAA" ;;
-            esac
-          elif [ "$EVENT_TYPE" = "issues" ]; then
+            TITLE="$PR_TITLE"
+            URL="$PR_URL"
+            EMOJI=":sparkles:"
+          elif [ "$EVENT_NAME" = "issues" ]; then
             TARGET="Issue"
-            TITLE="${{ github.event.issue.title }}"
-            URL="${{ github.event.issue.html_url }}"
-            case "$ACTION" in
-              opened)   EMOJI=":bug:";     COLOR="#E01E5A" ;;
-              reopened) EMOJI=":recycle:"; COLOR="#ECB22E" ;;
-              closed)   EMOJI=":white_check_mark:"; COLOR="#2EB67D" ;;
-              *)        EMOJI=":memo:";    COLOR="#AAAAAA" ;;
-            esac
-          elif [ "$EVENT_TYPE" = "issue_comment" ]; then
+            TITLE="$ISSUE_TITLE"
+            URL="$ISSUE_URL"
+            EMOJI=":bug:"
+          elif [ "$EVENT_NAME" = "issue_comment" ]; then
             TARGET="Comment"
-            TITLE="${{ github.event.issue.title }}"
-            URL="${{ github.event.comment.html_url }}"
+            TITLE="$ISSUE_TITLE"
+            URL="$COMMENT_URL"
             EMOJI=":speech_balloon:"
-            COLOR="#4A154B"  # púrpura Slack
           fi
 
           echo "payload<<EOF" >> $GITHUB_OUTPUT
           cat <<EOT >> $GITHUB_OUTPUT
           {
-            "text": "*Feedback from community*",
-            "attachments": [
+            "text": "$EMOJI *$ACTION on $TARGET* by $ACTOR",
+            "blocks": [
               {
-                "color": "$COLOR",
-                "blocks": [
-                  {
-                    "type": "header",
-                    "text": { "type": "plain_text", "text": "$EMOJI $ACTION on $TARGET", "emoji": true }
-                  },
-                  {
-                    "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "*Repository:* <$GITHUB_SERVER_URL/$REPO|$REPO>\n*User:* $ACTOR\n*Action:* $ACTION"
-                    }
-                  },
-                  {
-                    "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "*Title:* <$URL|$TITLE>"
-                    }
-                  },
-                  {
-                    "type": "context",
-                    "elements": [
-                      { "type": "mrkdwn", "text": "<$RUN_URL|View workflow run>" }
-                    ]
-                  }
+                "type": "header",
+                "text": { "type": "plain_text", "text": "$EMOJI $ACTION on $TARGET", "emoji": true }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Repository:* <$GITHUB_SERVER_URL/$REPO|$REPO>\n*User:* $ACTOR\n*Action:* $ACTION\n*Title:* <$URL|$TITLE>"
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  { "type": "mrkdwn", "text": "<$RUN_URL|View workflow run>" }
                 ]
               }
             ]
@@ -100,4 +84,4 @@ jobs:
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
-          payload: ${{ steps.slack_message.outputs.payload }}
+          payload: ${{ steps.payload.outputs.payload }}

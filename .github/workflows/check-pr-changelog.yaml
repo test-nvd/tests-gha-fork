@@ -1,0 +1,67 @@
+name: Check Changelog per module
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+
+    steps:
+      # https://github.com/actions/checkout
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # https://github.com/tj-actions/changed-files
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            extra/**
+            main/**
+
+      - name: Detect missing ChangeLogs
+        id: detect-module
+        run: .github/scripts/detect-changes.sh missing-changelogs
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+
+      # 🚨 Internal PRs (same repo): request changes via review
+      - name: Request changes (internal PRs)
+        if: >
+          steps.detect-module.outputs.missing_changelog_modules != '' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh api repos/${{ github.repository }}/pulls/${PR_NUMBER}/reviews \
+            -f event="REQUEST_CHANGES" \
+            -f body="🚨 ChangeLog missing for module(s): ${{ steps.detect-module.outputs.missing_changelog_modules }}.
+            Please update the ChangeLog file(s) before merging."
+
+      # 💬 External PRs (forks): fallback to comment
+      - name: Comment for forks
+        if: >
+          steps.detect-module.outputs.missing_changelog_modules != '' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ⚠️ This PR modifies one or more modules without updating their **ChangeLog**:
+            ```
+            ${{ steps.detect-module.outputs.missing_changelog_modules }}
+            ```
+            Please add or update the corresponding ChangeLog file(s) before this PR can be merged.
+            See [this link][1] to generate a proper ChangeLog entry.
+
+            [1]: https://github.com/djoven89/tests-gha-pr-zen/tree/main/.github/changelog.md
