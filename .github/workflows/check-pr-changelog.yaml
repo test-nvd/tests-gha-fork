@@ -59,3 +59,5 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             ⚠️ This PR modifies one or more modules without updating their **ChangeLog**.
+            Read the following link for more information:
+              https://github.com/djoven89/tests-gha/blob/main/.github/changelog.md
