@@ -1,7 +1,7 @@
 name: Check Changelog per module
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - reopened
@@ -36,9 +36,10 @@ jobs:
 
       # 🚨 Internal PRs (same repo): request changes via review
       - name: Request changes (internal PRs)
-        if: >
-          steps.detect-module.outputs.missing_changelog_modules != '' &&
-          github.event.pull_request.head.repo.full_name == github.repository
+        # if: >
+        #   steps.detect-module.outputs.missing_changelog_modules != '' &&
+        #   github.event.pull_request.head.repo.full_name == github.repository
+        if: steps.detect-module.outputs.missing_changelog_modules != ''
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -48,20 +49,16 @@ jobs:
             -f body="🚨 ChangeLog missing for module(s): ${{ steps.detect-module.outputs.missing_changelog_modules }}.
             Please update the ChangeLog file(s) before merging."
 
-      # 💬 External PRs (forks): fallback to comment
-      - name: Comment for forks
-        if: >
-          steps.detect-module.outputs.missing_changelog_modules != '' &&
-          github.event.pull_request.head.repo.full_name != github.repository
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ⚠️ This PR modifies one or more modules without updating their **ChangeLog**:
-            ```
-            ${{ steps.detect-module.outputs.missing_changelog_modules }}
-            ```
-            Please add or update the corresponding ChangeLog file(s) before this PR can be merged.
-            See [this link][1] to generate a proper ChangeLog entry.
-
-            [1]: https://github.com/djoven89/tests-gha-pr-zen/tree/main/.github/changelog.md
+      # # 💬 External PRs (forks): fallback to comment
+      # # https://github.com/peter-evans/create-or-update-comment
+      # - name: Comment for forks
+      #   if: >
+      #     steps.detect-module.outputs.missing_changelog_modules != '' &&
+      #     github.event.pull_request.head.repo.full_name != github.repository
+      #   uses: peter-evans/create-or-update-comment@v5.0.0
+      #   with:
+      #     issue-number: ${{ github.event.pull_request.number }}
+      #     body: |
+      #       ⚠️ This PR modifies one or more modules without updating their **ChangeLog**.
+      #       Read the following link for more information:
+      #         https://github.com/djoven89/tests-gha/blob/main/.github/changelog.md
