@@ -4,7 +4,7 @@
 
 # This script releases an updated modules.
 
-set -xeuo pipefail
+set -euo pipefail
 IFS=$'\n\t'
 
 ###
@@ -49,7 +49,6 @@ function generate_changelog() {
     cd "${module}"
     ${SCRIPT_UPDATE_CHANGELOG} "${ZENTYAL_BASE}" "${ZENTYAL_URGENCY}" "${GIT_USERNAME}" "${GIT_EMAIL}"
 
-    # REVISAR
     if ! git status -s | egrep -o '^ M debian/changelog$'; then
         echo "No changes detected in debian/changelog for module: ${module}. Skipping release."
         return 0
@@ -66,6 +65,7 @@ function commit_and_tag() {
     MODULE_NAME=$(echo "${CHANGELOG_HEADER}" | awk '{print $1}')
     TAG_NAME="v${MODULE_VERSION}-${MODULE_NAME}"
 
+    echo "Committing changelog and creating tag: ${TAG_NAME}"
     git add debian/changelog
     git commit -m "chore(release): update changelog for ${MODULE_NAME} by GH Actions"
     git tag "${TAG_NAME}"
@@ -97,10 +97,10 @@ fi
 
 prepare_git
 
-for module in ${MODULES_TO_RELEASE}; do
-    cd ${BASE_DIR}
+while IFS= read -r module; do
     echo "Releasing module: ${module}"
+    cd ${BASE_DIR}
     generate_changelog "${module}"
     commit_and_tag
     create_release
-done
+done < <(echo "$MODULES_TO_RELEASE" | tr ' ' '\n')
