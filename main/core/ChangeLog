@@ -1,3 +1,5 @@
+8.0.9
+	+ System report improvements
 8.0.8
 	+ Improve the daily zentyal cron job
 	+ Fix the password confirmation value in the Log module. Fix #2189
