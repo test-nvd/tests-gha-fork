@@ -1,2 +1,3 @@
-# tests-gha
-Testing GitHub workflows
+# Testing GitHub workflows
+
+Testing purposes.
