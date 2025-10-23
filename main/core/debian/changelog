@@ -1,3 +1,9 @@
+zentyal-core (8.0.10) jammy; urgency=medium
+
+  * New upstream release
+
+ -- github-actions <github-actions@github.com>  Thu, 23 Oct 2025 08:19:27 +0000
+
 zentyal-core (8.0.9) jammy; urgency=medium
 
   * New upstream release
