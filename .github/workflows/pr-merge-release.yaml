@@ -1,10 +1,6 @@
 name: Release module
 
 on:
-  # pull_request:
-  #   types: [closed]
-  #   branches:
-  #     - main
   push:
     branches:
       - main
@@ -19,7 +15,6 @@ on:
 
 permissions:
   contents: write
-  # pull-requests: write
 
 env:
   SCRIPT_DETECT: .github/scripts/detect-changes.sh
@@ -28,7 +23,7 @@ env:
 
 jobs:
   release-changes:
-    # if: github.event.pull_request.merged == true
+    # if: startsWith(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest
     outputs:
       changed_modules: ${{ steps.detect.outputs.changed_modules }}
@@ -63,7 +58,7 @@ jobs:
 
   generate-packages:
     needs: release-changes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     env:
       MODULES: ${{ needs.release-changes.outputs.changed_modules }}
 
@@ -72,39 +67,39 @@ jobs:
         run: |
           echo "Generating packages for modules: $MODULES"
 
-      # # https://github.com/actions/checkout
-      # - name: Checkout repo
-      #   uses: actions/checkout@v5
+      # https://github.com/aws-actions/configure-aws-credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5.1.0
+        with:
+          audience: sts.amazonaws.com
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_OIDC }}
 
-      # - name: Install dependencies
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install -y wget po-debconf
+      # https://docs.aws.amazon.com/cli/latest/reference/ecs/describe-task-definition.html
+      - name: Download latest Amazon ECS task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ secrets.TASK_DEFINITION_NAME }}:${{ secrets.TASK_DEFINITION_VERSION }} --query taskDefinition > task-definition.json
 
-      # - name: Add Zentyal repository
-      #   run: |
-      #     echo "deb [trusted=yes] http://packages.zentyal.org/zentyal ${{ env.ZENTYAL_VERSION }} main extra" | sudo tee /etc/apt/sources.list.d/zentyal.list
-      #     sudo apt update
-
-      # - name: Install zbuildtools
-      #   run: |
-      #     sudo apt install -y zbuildtools
-
-      # - name: Create temporal directory for the package
-      #   run: |
-      #     mkdir -p ~/zentyal-packages
-
-      # - name: Generate packages
-      #   run: |
-      #     for module in $MODULES; do
-      #       echo "Generating package for module: $module"
-      #       cd ${module}
-      #       zentyal-package
-      #       ls -la debs-ppa/
-      #       cp -v debs-ppa/*.{deb,dsc,xz,gz} ~/zentyal-packages/
-      #       cd -
-      #     done
-      #     ls -la ~/zentyal-packages/
+      # https://github.com/aws-actions/amazon-ecs-deploy-task-definition
+      - name: Create an Amazon ECS Fargate Task to generate the packages
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2.4.0
+        with:
+          task-definition: task-definition.json
+          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
+          service: service-package-builder
+          run-task: true
+          wait-for-service-stability: true
+          wait-for-task-stopped: true
+          run-task-container-overrides: |
+            [
+              {
+                "name": "builder",
+                "environment": [
+                  {"name": "BRANCH", "value": "${{ github.ref_name }}"},
+                  {"name": "MODULES", "value": "${{ env.MODULES }}"}
+                ]
+              }
+            ]
 
   release-packages:
     needs: generate-packages
