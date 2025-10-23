@@ -1,3 +1,9 @@
+zentyal-zenbuntu-desktop (8.0.4) jammy; urgency=medium
+
+  * New upstream release
+
+ -- github-actions <github-actions@github.com>  Thu, 23 Oct 2025 08:09:56 +0000
+
 zentyal-zenbuntu-desktop (8.0.3) jammy; urgency=medium
 
   * New upstream release
