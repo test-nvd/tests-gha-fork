@@ -76,22 +76,25 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_OIDC }}
 
+      # https://docs.aws.amazon.com/cli/latest/reference/ecs/run-task.html
+      # https://docs.aws.amazon.com/cli/latest/reference/ecs/wait/tasks-stopped.html
       - name: Launch ECS Fargate Task
         run: |
+          set -euo pipefail
           TASK_ARN=$(aws ecs run-task \
             --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.SUBNET_ID }}],securityGroups=[${{ secrets.SECURITY_GROUP_ID }}],assignPublicIp=ENABLED}" \
             --task-definition ${{ secrets.TASK_DEFINITION_NAME }}:${{ secrets.TASK_DEFINITION_VERSION }} \
-            --overrides '{
-              "containerOverrides": [{
-                "name": "${{ secrets.CONTAINER_NAME }}",
-                "environment": [
-                  {"name": "BRANCH", "value": "${GITHUB_REF_NAME}"},
-                  {"name": "MODULES", "value": "${MODULES}"}
+            --overrides "{
+              \"containerOverrides\": [{
+                \"name\": \"${{ secrets.CONTAINER_NAME }}\",
+                \"environment\": [
+                  {\"name\": \"BRANCH\", \"value\": \"${GITHUB_REF_NAME}\"},
+                  {\"name\": \"MODULES\", \"value\": \"${MODULES}\"}
                 ]
               }]
-            }' | jq -r '.tasks[0].taskArn')
+            }" | jq -r '.tasks[0].taskArn')
 
           echo "Waiting for ECS task '${TASK_ARN}' to stop..."
           aws ecs wait tasks-stopped --cluster ${{ secrets.ECS_CLUSTER_NAME }} --tasks ${TASK_ARN}
