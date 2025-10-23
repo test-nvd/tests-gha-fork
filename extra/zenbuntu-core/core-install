@@ -5,7 +5,7 @@ ARCHIVE_URL="https://packages.zentyal.org/zentyal"
 update_if_network()
 {
     # Check if we can connect to the archive url
-    if $(wget -T 10 -t 1 $ARCHIVE_URL); then
+    if $(wget -T 15 -t 1 $ARCHIVE_URL); then
         echo "Updating package database from the network..."
         apt-get update
         DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
