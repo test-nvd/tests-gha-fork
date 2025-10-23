@@ -44,6 +44,7 @@ use EBox::Gettext;
 
     rpc server dynamic port range = 49152-65535
 
+    # Set the interfaces that you want to listen Samba
 % if ($ifaces) {
     interfaces = <% $ifaces %>
     bind interfaces only = yes
