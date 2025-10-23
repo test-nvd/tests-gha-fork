@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 env:
   SCRIPT_DETECT: .github/scripts/detect-changes.sh
