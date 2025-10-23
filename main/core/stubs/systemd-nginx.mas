@@ -10,5 +10,5 @@ After=network.target
 ExecStart=/usr/sbin/nginx -c <% $conf %>
 ExecStop=/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /var/lib/zentyal/tmp/nginx.pid
 Restart=on-failure
-TimeoutStopSec=5
+TimeoutStopSec=10
 KillMode=mixed
