@@ -79,8 +79,6 @@ jobs:
       # https://docs.aws.amazon.com/cli/latest/reference/ecs/run-task.html
       # https://docs.aws.amazon.com/cli/latest/reference/ecs/wait/tasks-stopped.html
       - name: Launch ECS Fargate Task
-        env:
-          REPO: https://github.com/djoven89/tests-gha.git
         run: |
           set -euo pipefail
           TASK_ARN=$(aws ecs run-task \
@@ -93,8 +91,7 @@ jobs:
                 \"name\": \"${{ secrets.CONTAINER_NAME }}\",
                 \"environment\": [
                   {\"name\": \"BRANCH\", \"value\": \"${GITHUB_REF_NAME}\"},
-                  {\"name\": \"MODULES\", \"value\": \"${MODULES}\"},
-                  {\"name\": \"REPO\", \"value\": \"${REPO}\"},
+                  {\"name\": \"MODULES\", \"value\": \"${MODULES}\"}
                 ]
               }]
             }" | jq -r '.tasks[0].taskArn')
