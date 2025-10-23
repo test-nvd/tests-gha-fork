@@ -27,17 +27,17 @@ sub getUsers
               . $u->description() . ';'
               . '"' . $u->mail() . '"' . ';'
 	      			. 'password' . ';'
-	      			. $u->isSystem() . ';' 
+	      			. $u->isSystem() . ';'
 	      			. $u->uidNumber() . ';'
               . getUserGroups($u) . ";\n";
 	        print $u->get('samAccountName') . " done...\n";
         }
     }
-    
+
     return @lines;
 }
 
-sub getUserGroups 
+sub getUserGroups
 {
     my($u) = @_;
     my $groups;
