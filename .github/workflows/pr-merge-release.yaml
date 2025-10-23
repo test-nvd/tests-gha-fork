@@ -76,31 +76,25 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_OIDC }}
 
-      # https://docs.aws.amazon.com/cli/latest/reference/ecs/describe-task-definition.html
-      - name: Download latest Amazon ECS task definition
+      - name: Launch ECS Fargate Task
         run: |
-          aws ecs describe-task-definition --task-definition ${{ secrets.TASK_DEFINITION_NAME }}:${{ secrets.TASK_DEFINITION_VERSION }} --query taskDefinition > task-definition.json
-
-      # https://github.com/aws-actions/amazon-ecs-deploy-task-definition
-      - name: Create an Amazon ECS Fargate Task to generate the packages
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2.4.0
-        with:
-          task-definition: task-definition.json
-          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
-          service: service-package-builder
-          run-task: true
-          wait-for-service-stability: true
-          wait-for-task-stopped: true
-          run-task-container-overrides: |
-            [
-              {
-                "name": "builder",
+          TASK_ARN=$(aws ecs run-task \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.SUBNET_ID }}],securityGroups=[${{ secrets.SECURITY_GROUP_ID }}],assignPublicIp=ENABLED}" \
+            --task-definition ${{ secrets.TASK_DEFINITION_NAME }}:${{ secrets.TASK_DEFINITION_VERSION }} \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "${{ secrets.CONTAINER_NAME }}",
                 "environment": [
-                  {"name": "BRANCH", "value": "${{ github.ref_name }}"},
-                  {"name": "MODULES", "value": "${{ env.MODULES }}"}
+                  {"name": "BRANCH", "value": "${GITHUB_REF_NAME}"},
+                  {"name": "MODULES", "value": "${MODULES}"}
                 ]
-              }
-            ]
+              }]
+            }' | jq -r '.tasks[0].taskArn')
+
+          echo "Waiting for ECS task '${TASK_ARN}' to stop..."
+          aws ecs wait tasks-stopped --cluster ${{ secrets.ECS_CLUSTER_NAME }} --tasks ${TASK_ARN}
 
   release-packages:
     needs: generate-packages
