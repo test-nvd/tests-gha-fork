@@ -180,5 +180,5 @@ unless ($dsServiceName =~/$infrastructureMaster/i) {
     }
 }
 
-print "Migrated successfully!\n";
+print "Migrated successfully but two missing roles must be transferred manually!\n";
 
