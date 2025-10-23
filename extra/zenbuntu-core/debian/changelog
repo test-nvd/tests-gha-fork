@@ -1,3 +1,9 @@
+zentyal-zenbuntu-core (8.0.2) jammy; urgency=medium
+
+  * New upstream release
+
+ -- github-actions <github-actions@github.com>  Thu, 23 Oct 2025 08:09:45 +0000
+
 zenbuntu-core (8.0.1) jammy; urgency=low
 
   * New upstream release
