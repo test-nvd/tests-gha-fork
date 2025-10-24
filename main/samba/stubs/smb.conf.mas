@@ -55,9 +55,9 @@ use EBox::Gettext;
     # Prevent LDAP enumeration
     restrict anonymous = 2
 
-    log level = 3
+    log level = 1
     log file = /var/log/samba/samba.log
-    max log size = 100000
+    max log size = 150000
 
 % if ($radius) {
     lanman auth = yes
