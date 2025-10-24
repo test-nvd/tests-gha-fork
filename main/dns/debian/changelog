@@ -1,3 +1,9 @@
+zentyal-dns (8.0.5) jammy; urgency=medium
+
+  * New upstream release
+
+ -- github-actions <github-actions@github.com>  Fri, 24 Oct 2025 10:28:28 +0000
+
 zentyal-dns (8.0.4) jammy; urgency=medium
 
   * New upstream release
