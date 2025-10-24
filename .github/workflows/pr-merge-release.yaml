@@ -99,6 +99,18 @@ jobs:
           echo "Waiting for ECS task '${TASK_ARN}' to stop..."
           aws ecs wait tasks-stopped --cluster ${{ secrets.ECS_CLUSTER_NAME }} --tasks ${TASK_ARN}
 
+      - name: Verify generated packages
+        run: |
+          set -euo pipefail
+          NUM_MOD=$(echo ${MODULES} | wc -w)
+          TOTAL_PKGS=$((NUM_MOD * 3))
+          CURRENT_PKGS=$(aws s3 ls "s3://${{ secrets.S3_BUCKET_NAME }}/" | wc -l)
+
+          if [[ $CURRENT_PKGS -ne $TOTAL_PKGS ]]; then
+            echo "Missing packages in S3 bucket!"
+            exit 1
+          fi
+
   release-packages:
     needs: generate-packages
     runs-on: ubuntu-latest
