@@ -1,3 +1,9 @@
+zentyal-samba (8.0.7) jammy; urgency=medium
+
+  * New upstream release
+
+ -- github-actions <github-actions@github.com>  Fri, 24 Oct 2025 11:50:24 +0000
+
 zentyal-samba (8.0.6) jammy; urgency=medium
 
   * New upstream release
