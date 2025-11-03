@@ -69,7 +69,7 @@ function commit_and_tag() {
     git add debian/changelog
     git commit -m "chore(release): update changelog for ${MODULE_NAME} by GH Actions"
     git tag "${TAG_NAME}"
-    git push origin HEAD:main --tags
+    git push --tags
 }
 
 

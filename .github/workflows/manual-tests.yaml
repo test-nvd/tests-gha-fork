@@ -1,11 +1,19 @@
 name: Debug Workflow
 
 on:
-  workflow_dispatch:
-
+  # workflow_dispatch:
+  push:
+    branches:
+      - main
+      - '7.0'
+      - '7.1'
+      - '8.0'
+    paths:
+      - 'main/**/ChangeLog'
+      - 'extra/**/ChangeLog'
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   SCRIPT_DETECT: .github/scripts/detect-changes.sh
@@ -13,18 +21,167 @@ env:
   ZENTYAL_VERSION: 8.0
 
 jobs:
-  tests:
-    if: github.event_name == 'workflow_dispatch'
+  release-changes:
+    if: startsWith(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest
+    outputs:
+      changed_modules: ${{ steps.detect.outputs.changed_modules }}
 
     steps:
       # https://github.com/actions/checkout
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: DEBUG
+      # https://github.com/tj-actions/changed-files
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            extra/**
+            main/**
+
+      - name: Skip if debian/changelog changed
         run: |
-          pwd
-          ls -la
-          ls -la ~/
-          ls -la /tmp/
+          set -eo pipefail
+          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q "debian/changelog"; then
+            echo "Detected changes in debian/changelog — skipping workflow."
+            exit 78
+          fi
+
+      - name: Get changed modules
+        if: ${{ steps.changed-files.outputs.all_changed_files != '' && !contains(steps.changed-files.outputs.all_changed_files, 'debian/changelog') }}
+        id: detect
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: ${{ env.SCRIPT_DETECT }} changed-modules
+
+      - name: Commit, tag and release changes
+        env:
+          MODULES: ${{ steps.detect.outputs.changed_modules }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Creating tags and releases for modules: $MODULES"
+          ${{ env.SCRIPT_RELEASE_MODULE }} "$MODULES"
+
+      # https://github.com/slackapi/slack-github-action
+      - name: Send Slack notification
+        if: failure()
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "Release changes"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "${{ env.EMOJI_STATUS }} *Release changes - Status:* `${{ job.status }}`"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Workflow:* ${{ github.workflow }}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Branch:* ${GITHUB_REF_NAME}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Commit:* ${{ github.sha }}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Run URL:* <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here>"
+
+  generate-packages:
+    needs: release-changes
+    runs-on: ubuntu-latest
+    env:
+      MODULES: ${{ needs.release-changes.outputs.changed_modules }}
+
+    steps:
+      - name: Packages to generate
+        run: |
+          echo "Generating packages for modules: $MODULES"
+
+      # https://github.com/slackapi/slack-github-action
+      - name: Send Slack notification
+        if: failure()
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "Build Zentyal packages"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "${{ env.EMOJI_STATUS }} *Build packages - Status:* `${{ job.status }}`"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Workflow:* ${{ github.workflow }}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Branch:* ${GITHUB_REF_NAME}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Commit:* ${{ github.sha }}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Run URL:* <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here>"
+
+  release-packages:
+    needs: generate-packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Info message
+        run: |
+          echo "Releasing generated packages..."
+
+      - name: Set Slack Emoji Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "EMOJI_STATUS=:rocket: :rocket:" >> $GITHUB_ENV
+          else
+            echo "EMOJI_STATUS=:rotating_light: :rotating_light:" >> $GITHUB_ENV
+          fi
+
+      # https://github.com/slackapi/slack-github-action
+      - name: Send Slack notification
+        if: always()
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "Release packages to the Development repository"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "${{ env.EMOJI_STATUS }} *Release packages to Development - Status:* `${{ job.status }}`"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Workflow:* ${{ github.workflow }}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Branch:* ${GITHUB_REF_NAME}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Commit:* ${{ github.sha }}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Run URL:* <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here>"

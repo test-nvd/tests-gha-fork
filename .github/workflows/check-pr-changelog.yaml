@@ -10,6 +10,9 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  SCRIPT_DETECT: .github/scripts/detect-changes.sh
+
 jobs:
   check-changelog:
     runs-on: ubuntu-latest
@@ -29,8 +32,9 @@ jobs:
             main/**
 
       - name: Detect missing ChangeLogs
+        if: ${{ steps.changed-files.outputs.all_changed_files != '' }}
         id: detect-module
-        run: .github/scripts/detect-changes.sh missing-changelogs
+        run: ${{ env.SCRIPT_DETECT }} missing-changelogs
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
 
