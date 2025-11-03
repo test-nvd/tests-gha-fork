@@ -24,8 +24,8 @@ jobs:
       RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
     steps:
-      - name: DEBUG
-        run: echo '${{ toJson(github.event) }}'
+      # - name: DEBUG
+      #   run: echo '${{ toJson(github.event) }}'
 
       - name: Prepare Slack payload
         id: payload
@@ -79,6 +79,7 @@ jobs:
           EOT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      # https://github.com/slackapi/slack-github-action
       - name: Send Slack notification
         uses: slackapi/slack-github-action@v2.1.1
         with:
