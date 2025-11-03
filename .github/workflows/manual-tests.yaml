@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 env:
   SCRIPT_DETECT: .github/scripts/detect-changes.sh
@@ -22,7 +23,7 @@ env:
 
 jobs:
   release-changes:
-    if: startsWith(github.event.head_commit.message, 'Merge pull request')
+    # if: startsWith(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest
     outputs:
       changed_modules: ${{ steps.detect.outputs.changed_modules }}
@@ -42,11 +43,13 @@ jobs:
             main/**
 
       - name: Skip if debian/changelog changed
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -eo pipefail
           if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q "debian/changelog"; then
-            echo "Detected changes in debian/changelog — skipping workflow."
-            exit 0
+            gh run cancel ${{ github.run_id }}
+            exit 1
           fi
 
       - name: Get changed modules
