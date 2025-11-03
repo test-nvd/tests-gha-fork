@@ -17,4 +17,5 @@ do
     /usr/share/zentyal-network/dhcp-gateway.pl $iface $(cat /var/lib/zentyal/conf/${iface}_gw)
 done
 
+# Successfully exit
 exit 0
