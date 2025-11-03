@@ -7,6 +7,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+
 ###
 ## Functions
 ###
@@ -22,6 +23,7 @@ function usage() {
     echo "  ALL_CHANGED_FILES   Must contain the list of changed files (space or newline separated)."
     exit 1
 }
+
 
 function get_changed_modules() {
     local files="$1"
@@ -72,6 +74,7 @@ function export_for_github() {
         echo "${key}=${value}" >> "$GITHUB_OUTPUT"
     fi
 }
+
 
 ###
 ## Main script
