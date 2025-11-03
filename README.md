@@ -1,3 +1,3 @@
-# Testing GitHub workflows
+# Testing GitHub Actions workflows
 
 Testing purposes!!
