@@ -14,7 +14,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 env:
   SCRIPT_DETECT: .github/scripts/detect-changes.sh
@@ -27,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed_modules: ${{ steps.detect.outputs.changed_modules }}
+      skip_next: ${{ steps.skip-check.outputs.skip_next }}
 
     steps:
       # https://github.com/actions/checkout
@@ -43,23 +43,25 @@ jobs:
             main/**
 
       - name: Skip if debian/changelog changed
-        env:
-          GH_TOKEN: ${{ github.token }}
+        id: skip-check
         run: |
           set -eo pipefail
           if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q "debian/changelog"; then
-            gh run cancel ${{ github.run_id }}
-            exit 1
+            echo "Detected changes in debian/changelog — skipping workflow."
+            echo "skip_next=true" >> $GITHUB_OUTPUT
+            exit 0
           fi
+          echo "skip_next=false" >> $GITHUB_OUTPUT
 
       - name: Get changed modules
-        if: ${{ steps.changed-files.outputs.all_changed_files != '' && !contains(steps.changed-files.outputs.all_changed_files, 'debian/changelog') }}
+        if: ${{ steps.skip-check.outputs.skip_next == 'false' && steps.changed-files.outputs.all_changed_files != '' }}
         id: detect
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: ${{ env.SCRIPT_DETECT }} changed-modules
 
       - name: Commit, tag and release changes
+        if: ${{ steps.skip-check.outputs.skip_next == 'false' && steps.changed-files.outputs.all_changed_files != '' }}
         env:
           MODULES: ${{ steps.detect.outputs.changed_modules }}
           GH_TOKEN: ${{ github.token }}
@@ -100,6 +102,7 @@ jobs:
 
   generate-packages:
     needs: release-changes
+    if: ${{ needs.release-changes.outputs.skip_next == 'false' }}
     runs-on: ubuntu-latest
     env:
       MODULES: ${{ needs.release-changes.outputs.changed_modules }}
@@ -142,6 +145,7 @@ jobs:
 
   release-packages:
     needs: generate-packages
+    if: ${{ needs.generate-packages.result == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
