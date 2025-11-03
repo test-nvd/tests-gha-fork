@@ -46,7 +46,7 @@ jobs:
           set -eo pipefail
           if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q "debian/changelog"; then
             echo "Detected changes in debian/changelog — skipping workflow."
-            exit 78
+            exit 0
           fi
 
       - name: Get changed modules
